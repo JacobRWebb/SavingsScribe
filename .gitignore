@@ -1,0 +1,39 @@
+# Ignore SAM build artifacts
+.aws-sam/
+# Ignore Lambda function deployment zips (if manually built)
+*.zip
+
+# Ignore Visual Studio/VSCode files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Ignore build outputs
+bin/
+obj/
+TestResults/
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore NuGet packages
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Ignore logs and temp files
+*.log
+*.tmp
+
+# Ignore AWS credentials and config (never commit!)
+.aws/
+
+# Development
+.vs
+.cdk
+cdk.out

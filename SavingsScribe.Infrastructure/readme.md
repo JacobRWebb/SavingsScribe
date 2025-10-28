@@ -1,0 +1,1 @@
+cdk synth --app "dotnet run --project .\SavingsScribe.Infrastructure\SavingsScribe.Infrastructure.csproj"
