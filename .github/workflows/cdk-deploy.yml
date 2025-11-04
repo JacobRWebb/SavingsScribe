@@ -87,6 +87,9 @@ jobs:
     needs: [validate, synth]
     if: needs.validate.outputs.should-deploy == 'true'
     environment: production
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout repository

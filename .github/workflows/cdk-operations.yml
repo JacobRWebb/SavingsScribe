@@ -26,6 +26,9 @@ jobs:
   cdk-operation:
     name: CDK ${{ inputs.operation }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
     - name: Checkout repository
