@@ -126,6 +126,10 @@ jobs:
       - name: Build solution
         run: dotnet build --no-restore --configuration Release
 
+      - name: CDK Bootstrap
+        run: |
+          cdk bootstrap --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
+
       - name: CDK Deploy
         run: |
           cdk deploy --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --all --require-approval never
