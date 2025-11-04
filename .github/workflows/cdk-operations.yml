@@ -1,0 +1,77 @@
+name: CDK Operations
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      operation:
+        required: true
+        type: string
+        default: 'deploy'
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+      cdk-version:
+        required: false
+        type: string
+        default: '2.215.0'
+    secrets:
+      AWS_ROLE_ARN:
+        required: true
+
+jobs:
+  cdk-operation:
+    name: CDK ${{ inputs.operation }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ inputs.aws-region }}
+        
+    - name: Install AWS CDK Toolkit
+      run: npm install -g aws-cdk@${{ inputs.cdk-version }}
+      
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: CDK Bootstrap
+      if: inputs.operation == 'bootstrap'
+      run: |
+        cdk bootstrap --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
+        
+    - name: CDK Deploy
+      if: inputs.operation == 'deploy'
+      run: |
+        cdk deploy --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --all --require-approval never
+        
+    - name: CDK Destroy
+      if: inputs.operation == 'destroy'
+      run: |
+        cdk destroy --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --all --force
+        
+    - name: CDK Diff
+      if: inputs.operation == 'diff'
+      run: |
+        cdk diff --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --all

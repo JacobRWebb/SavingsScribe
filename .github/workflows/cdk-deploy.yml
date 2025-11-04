@@ -1,0 +1,129 @@
+name: CDK Deploy
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  CDK_VERSION: 2.215.0
+
+jobs:
+  validate:
+    name: Validate Code
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.changes.outputs.should-deploy }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Check for infrastructure changes
+      id: changes
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "should-deploy=false" >> $GITHUB_OUTPUT
+        else
+          echo "should-deploy=true" >> $GITHUB_OUTPUT
+        fi
+
+  synth:
+    name: CDK Synthesis
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should-deploy == 'true'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install AWS CDK Toolkit
+      run: npm install -g aws-cdk@${{ env.CDK_VERSION }}
+      
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: CDK Synthesis
+      run: |
+        cdk synth --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --all
+      
+    - name: Upload CloudFormation templates
+      uses: actions/upload-artifact@v4
+      with:
+        name: cdk-templates
+        path: cdk.out/
+        retention-days: 7
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: [validate, synth]
+    if: needs.validate.outputs.should-deploy == 'true'
+    environment: production
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Install AWS CDK Toolkit
+      run: npm install -g aws-cdk@${{ env.CDK_VERSION }}
+      
+    - name: Download CloudFormation templates
+      uses: actions/download-artifact@v4
+      with:
+        name: cdk-templates
+        path: cdk.out/
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: CDK Deploy
+      run: |
+        cdk deploy --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --all --require-approval never

@@ -1,0 +1,52 @@
+name: Bootstrap AWS Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws-region:
+        description: 'AWS region'
+        required: false
+        default: 'us-east-1'
+        type: string
+
+env:
+  CDK_VERSION: 2.215.0
+
+jobs:
+  bootstrap:
+    name: Bootstrap AWS Environment
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ github.event.inputs.aws-region || 'us-east-1' }}
+        
+    - name: Install AWS CDK Toolkit
+      run: npm install -g aws-cdk@${{ env.CDK_VERSION }}
+      
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: CDK Bootstrap
+      run: |
+        cdk bootstrap --app "dotnet run --project ./SavingsScribe.Infrastructure/SavingsScribe.Infrastructure.csproj" --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
