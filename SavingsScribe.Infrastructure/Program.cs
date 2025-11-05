@@ -9,10 +9,7 @@ namespace SavingsScribe.Infrastructure
         {
             var app = new App();
 
-            var mainStack = new MainStack(app, "MainStack", new StackProps
-            {
-
-            });
+            var mainStack = new MainStack(app, "SavingsScribeStack", new StackProps());
 
             app.Synth();
         }
