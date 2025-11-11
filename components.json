@@ -1,0 +1,17 @@
+{
+  "Information": {
+    "DotnetVersion": "8.0"
+  },
+  "components": {
+    "SavingsScribe.HelloWorld.Lambda": {
+      "Type": "Lambda",
+      "Path": "SavingsScribe.HelloWorld.Lambda/SavingsScribe.HelloWorld.Lambda",
+      "Tests": {
+        "SavingsScribe.HelloWorld.Lambda.Tests": {
+          "Type": "UnitTests",
+          "Path": "SavingsScribe.HelloWorld.Lambda/SavingsScribe.HelloWorld.Lambda.Tests"
+        }
+      }
+    }
+  }
+}

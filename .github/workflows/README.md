@@ -33,9 +33,17 @@ This directory contains GitHub Actions workflows for deploying AWS CDK infrastru
 - Manual dispatch
 
 **Jobs:**
-- `validate`: Code validation and build
+- `validate`: Code validation, build, and Lambda change detection
+- `build-lambdas`: Build and upload changed Lambda functions to S3 with versioning
 - `synth`: CDK synthesis to generate CloudFormation templates
-- `deploy`: Deploy to AWS environment
+- `deploy`: Deploy to AWS environment with Lambda S3 references
+
+**Lambda Deployment:**
+See [LAMBDA-DEPLOYMENT.md](./LAMBDA-DEPLOYMENT.md) for comprehensive documentation on the extensible Lambda deployment pipeline, including:
+- Change detection based on `components.json`
+- S3 versioning and storage
+- CloudFormation change detection
+- Adding new Lambda functions
 
 ### 2. CDK Operations (`cdk-operations.yml`)
 
